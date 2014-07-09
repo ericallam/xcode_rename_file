@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup'
+Bundler.setup
+
+require 'xcode_rename_file'
+require 'mixlib/cli'
+
+class RenamerCLI
+  include Mixlib::CLI
+
+  option :project, short: '-p PROJECT', long: '--project PROJECT', description: 'Path to xcodeproj file', required: true
+  option :existing, short: '-e EXISTING-FILE', long: '--existing EXISTING', description: 'Name of the existing file you want to change', required: true
+  option :new, short: '-n NEW-FILE', long: '--new NEW', description: 'The new name', required: true
+
+  option :scope, short: '-s GROUP', long: '--scope GROUP', description: 'Name of a Group to scope the changes to'
+end
+
+renamer_cli = RenamerCLI.new
+renamer_cli.parse_options
+
+
+project = Xcodeproj::Project.open File.expand_path(renamer_cli.config[:project])
+
+rename_header = XcodeRenameFile::Renamer.new(
+                  project, 
+                  renamer_cli.config[:scope] || project.main_group.display_name, 
+                  renamer_cli.config[:existing], 
+                  renamer_cli.config[:new]
+                )
+
+rename_header.rename!
